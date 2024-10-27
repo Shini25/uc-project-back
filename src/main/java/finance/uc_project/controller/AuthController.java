@@ -57,29 +57,35 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest,
-                                                       HttpServletResponse response) throws Exception {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authenticationRequest.getNumero(), authenticationRequest.getPassword())
-        );
+  @PostMapping("/login")
+public ResponseEntity<Map<String, String>> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest,
+                                                                   HttpServletResponse response) throws Exception {
+    Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(authenticationRequest.getNumero(), authenticationRequest.getPassword())
+    );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getNumero());
-        final String jwt = jwtUtil.generateToken(userDetails);
-        System.out.println("JWT token generated: " + jwt);
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+    final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getNumero());
+    final String jwt = jwtUtil.generateToken(userDetails);
+    System.out.println("JWT token generated: " + jwt);
 
-        Cookie jwtCookie = new Cookie("jwtToken", jwt);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(false); // Set to true in production with HTTPS
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(60 * 60); // 1 hour in seconds
-        response.addCookie(jwtCookie);
+    // Create a cookie for the JWT token with HttpOnly and Secure flags
+    Cookie jwtCookie = new Cookie("jwtToken", jwt);
+    jwtCookie.setHttpOnly(true);
+    jwtCookie.setSecure(false); // Set to true in production with HTTPS
+    jwtCookie.setPath("/");
+    jwtCookie.setMaxAge(60 * 60); // 1 hour in seconds
+    response.addCookie(jwtCookie);
 
-        userService.updateStatus(authenticationRequest.getNumero(), "ONLINE");
+    // Update user status to ONLINE
+    userService.updateStatus(authenticationRequest.getNumero(), "ONLINE");
 
-        return ResponseEntity.ok("Authentification réussie");
-    }
+    // Return a response with a JSON object
+    Map<String, String> responseBody = new HashMap<>();
+    responseBody.put("message", "Authentification réussie");
+    return ResponseEntity.ok(responseBody);
+}
+
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
