@@ -25,6 +25,7 @@ public class VisualisationDeDonneesApplication {
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
+            		.exposedHeaders("Set-Cookie");
             }            
         };
     }
