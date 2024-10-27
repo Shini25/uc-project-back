@@ -24,7 +24,7 @@ public class VisualisationDeDonneesApplication {
                         .allowedOrigins("http://192.168.206.110:4200")  
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(true)
             		.exposedHeaders("Set-Cookie");
             }            
         };
