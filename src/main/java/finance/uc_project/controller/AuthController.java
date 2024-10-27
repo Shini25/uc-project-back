@@ -6,18 +6,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +30,8 @@ import finance.uc_project.service.CustomUserDetailsService;
 import finance.uc_project.service.EmailService;
 import finance.uc_project.service.UserService;
 import finance.uc_project.util.JwtUtil;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -57,9 +58,9 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-       @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest,
-                                                       HttpServletResponse response) throws Exception {
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, String>> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest,
+                                                                     HttpServletResponse response) throws Exception {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authenticationRequest.getNumero(), authenticationRequest.getPassword())
         );
@@ -78,11 +79,23 @@ public class AuthController {
 
         userService.updateStatus(authenticationRequest.getNumero(), "ONLINE");
 
-        return ResponseEntity.ok("Authentification réussie");
+        Map<String, String> responseBody = new HashMap<>();
+        responseBody.put("message", "Authentification réussie");
+        responseBody.put("jwt", jwt);
+
+        return ResponseEntity.ok(responseBody);
+    }
+
+    @GetMapping("/check-session")
+    public ResponseEntity<?> checkSession() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+            return ResponseEntity.ok("User is authenticated");
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated");
     }
 
 
-    
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         Cookie jwtCookie = new Cookie("jwtToken", null);
