@@ -100,7 +100,7 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletResponse response) {
         Cookie jwtCookie = new Cookie("jwtToken", null);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(true);
+        jwtCookie.setSecure(false);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(0);
         response.addCookie(jwtCookie);
