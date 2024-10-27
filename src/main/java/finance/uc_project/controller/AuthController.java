@@ -69,30 +69,33 @@ public class AuthController {
         final String jwt = jwtUtil.generateToken(userDetails);
         System.out.println("JWT token generated: " + jwt);
 
-        // Create a cookie for the JWT token with HttpOnly and Secure flags
+        // Créer un cookie pour le token JWT avec HttpOnly et Secure selon l'environnement
         Cookie jwtCookie = new Cookie("jwtToken", jwt);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(false); // Set to true in production with HTTPS
+        jwtCookie.setSecure("prod".equals(System.getenv("APP_ENV"))); // Sécuriser en prod uniquement
         jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(60 * 60); // 1 hour in seconds
+        jwtCookie.setMaxAge(60 * 60); // 1 heure en secondes
         response.addCookie(jwtCookie);
 
-        // Update user status to ONLINE
+        // Mettre à jour le statut de l'utilisateur en "ONLINE"
         userService.updateStatus(authenticationRequest.getNumero(), "ONLINE");
 
-        // Return a response without the JWT in the body
+        // Retourner une réponse sans le JWT dans le corps
         return ResponseEntity.ok("Authentification réussie");
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        // Remove the cookie by setting its max age to 0
+        // Supprimer le cookie en réglant son âge à 0
         Cookie jwtCookie = new Cookie("jwtToken", null);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(true);
+        jwtCookie.setSecure("prod".equals(System.getenv("APP_ENV"))); // Sécuriser en prod uniquement
         jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0); // Immediately deletes the cookie
+        jwtCookie.setMaxAge(0); // Suppression immédiate
         response.addCookie(jwtCookie);
+
+        // Effacer le contexte de sécurité
+        SecurityContextHolder.clearContext();
 
         return ResponseEntity.ok("Déconnexion réussie");
     }
@@ -157,4 +160,7 @@ public class AuthController {
         errorResponse.put("error", "Utilisateur non trouvé.");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
+
+
+
 }
