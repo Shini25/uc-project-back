@@ -85,14 +85,21 @@ public class AuthController {
         return ResponseEntity.ok(responseBody);
     }
 
-    @GetMapping("/check-session")
-    public ResponseEntity<?> checkSession() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-            return ResponseEntity.ok("User is authenticated");
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated");
+@GetMapping("/check-session")
+public ResponseEntity<Map<String, Object>> checkSession() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    Map<String, Object> response = new HashMap<>();
+    
+    if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+        response.put("authenticated", true);
+        response.put("message", "User is authenticated");
+        return ResponseEntity.ok(response);
     }
+    
+    response.put("authenticated", false);
+    response.put("message", "User is not authenticated");
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+}
 
 
 @PostMapping("/logout")
