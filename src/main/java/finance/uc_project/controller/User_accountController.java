@@ -80,13 +80,9 @@ public class User_accountController {
     @GetMapping("/user-info")
     public ResponseEntity<?> getUserInfo() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null) {
-            System.out.println("Authentication: " + authentication); // Log authentication details
-            if (authentication.getPrincipal() instanceof UserDetails) {
-                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-                // Use userDetails to get user information
-                return ResponseEntity.ok(userDetails);
-            }
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            return ResponseEntity.ok(userDetails);
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User not authenticated");
     }
