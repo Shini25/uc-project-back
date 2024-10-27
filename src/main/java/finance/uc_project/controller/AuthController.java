@@ -72,7 +72,6 @@ public class AuthController {
 
         Cookie jwtCookie = new Cookie("jwtToken", jwt);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(false); // Set to true in production with HTTPS
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(60 * 60); // 1 hour in seconds
         response.addCookie(jwtCookie);
@@ -100,7 +99,6 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletResponse response) {
         Cookie jwtCookie = new Cookie("jwtToken", null);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(false);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(0);
         response.addCookie(jwtCookie);
