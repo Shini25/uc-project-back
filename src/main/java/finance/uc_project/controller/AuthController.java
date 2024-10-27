@@ -95,16 +95,20 @@ public class AuthController {
     }
 
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
-        Cookie jwtCookie = new Cookie("jwtToken", null);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0);
-        response.addCookie(jwtCookie);
+@PostMapping("/logout")
+public ResponseEntity<Map<String, String>> logout(HttpServletResponse response) {
+    // Invalidate the JWT token by removing the cookie
+    Cookie jwtCookie = new Cookie("jwtToken", null);
+    jwtCookie.setHttpOnly(true);
+    jwtCookie.setPath("/");
+    jwtCookie.setMaxAge(0); // Set the cookie to expire immediately
+    response.addCookie(jwtCookie);
 
-        return ResponseEntity.ok("Déconnexion réussie");
-    }
+    Map<String, String> responseBody = new HashMap<>();
+    responseBody.put("message", "Déconnexion réussie");
+
+    return ResponseEntity.ok(responseBody);
+}
 
     @PostMapping("/request-password-reset")
     public ResponseEntity<Map<String, String>> requestPasswordReset(@RequestBody String email) {
