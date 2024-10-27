@@ -9,10 +9,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 import finance.uc_project.security.JwtAuthenticationFilter;
+import finance.uc_project.security.JwtCookieFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -22,19 +22,20 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**","/api/users/login","/api/users/**","api/users/adduser","/api/users/check-numero").permitAll()
+                .requestMatchers("/api/auth/**", "/api/users/login", "/api/users/**", "/api/users/adduser", "/api/users/check-numero").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-
+        // Ajouter le JwtCookieFilter avant le JwtAuthenticationFilter
+        http.addFilterBefore(jwtCookieFilter(), UsernamePasswordAuthenticationFilter.class);
+        
         return http.build();
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter();
+    public JwtCookieFilter jwtCookieFilter() {
+        return new JwtCookieFilter();
     }
 
     @Bean
