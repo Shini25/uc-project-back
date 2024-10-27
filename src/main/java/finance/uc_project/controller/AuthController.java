@@ -1,10 +1,13 @@
 package finance.uc_project.controller;
 
 import java.time.LocalDateTime;
-import java.util.HashMap; // Corrected import for Optional
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,16 +25,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import finance.uc_project.dto.ResetPasswordRequest;
 import finance.uc_project.model.AuthenticationRequest;
-import finance.uc_project.model.AuthenticationResponse;
 import finance.uc_project.model.User_account;
 import finance.uc_project.repository.UserRepository;
 import finance.uc_project.service.CustomUserDetailsService;
 import finance.uc_project.service.EmailService;
 import finance.uc_project.service.UserService;
 import finance.uc_project.util.JwtUtil;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
-
 
 @RestController
 @RequestMapping("/api/auth")
@@ -70,29 +69,29 @@ public class AuthController {
         final String jwt = jwtUtil.generateToken(userDetails);
         System.out.println("JWT token generated: " + jwt);
 
-        // Créer un cookie pour stocker le JWT avec HttpOnly et Secure
+        // Create a cookie for the JWT token with HttpOnly and Secure flags
         Cookie jwtCookie = new Cookie("jwtToken", jwt);
-        jwtCookie.setHttpOnly(true); // Empêche JavaScript d'accéder au cookie
-        jwtCookie.setSecure(false); // Active en HTTPS; désactiver en dev si nécessaire
-        jwtCookie.setPath("/"); // Portée du cookie (tout le site)
-        jwtCookie.setMaxAge(60 * 60); // Durée de vie en secondes (ici 1 heure)
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setSecure(false); // Set to true in production with HTTPS
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(60 * 60); // 1 hour in seconds
         response.addCookie(jwtCookie);
 
-        // Mettre à jour le statut de l'utilisateur à ONLINE
+        // Update user status to ONLINE
         userService.updateStatus(authenticationRequest.getNumero(), "ONLINE");
 
-        // Renvoyer une réponse sans le JWT dans le corps
+        // Return a response without the JWT in the body
         return ResponseEntity.ok("Authentification réussie");
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        // Supprimer le cookie en le réinitialisant avec une durée de vie à 0
+        // Remove the cookie by setting its max age to 0
         Cookie jwtCookie = new Cookie("jwtToken", null);
         jwtCookie.setHttpOnly(true);
         jwtCookie.setSecure(true);
         jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0); // Supprime immédiatement le cookie
+        jwtCookie.setMaxAge(0); // Immediately deletes the cookie
         response.addCookie(jwtCookie);
 
         return ResponseEntity.ok("Déconnexion réussie");
@@ -105,15 +104,15 @@ public class AuthController {
         if (userOptional.isPresent()) {
             User_account user = userOptional.get();
 
-            // Générer un code de vérification à 6 chiffres
+            // Generate a 6-digit verification code
             String verificationCode = String.format("%06d", new Random().nextInt(999999));
 
-            // Enregistrer le code de vérification et son timestamp dans la base de données
+            // Save the verification code and its timestamp in the database
             user.setVerificationCode(verificationCode);
             user.setVerificationCodeTimestamp(LocalDateTime.now());
             userRepository.save(user);
 
-            // Envoyer le code par email
+            // Send the code via email
             emailService.sendVerificationCode(user.getEmail(), verificationCode);
 
             Map<String, String> response = new HashMap<>();
@@ -133,7 +132,7 @@ public class AuthController {
         if (userOptional.isPresent()) {
             User_account user = userOptional.get();
 
-            // Vérifier que le code de vérification n'est pas expiré avant de comparer
+            // Check that the verification code is not expired before comparing
             if (user.getVerificationCode() != null &&
                 user.getVerificationCodeTimestamp() != null &&
                 user.getVerificationCodeTimestamp().isAfter(LocalDateTime.now().minusMinutes(10)) &&
