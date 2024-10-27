@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -69,33 +69,26 @@ public class AuthController {
         final String jwt = jwtUtil.generateToken(userDetails);
         System.out.println("JWT token generated: " + jwt);
 
-        // Créer un cookie pour le token JWT avec HttpOnly et Secure selon l'environnement
         Cookie jwtCookie = new Cookie("jwtToken", jwt);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure("prod".equals(System.getenv("APP_ENV"))); // Sécuriser en prod uniquement
+        jwtCookie.setSecure(false); // Set to true in production with HTTPS
         jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(60 * 60); // 1 heure en secondes
+        jwtCookie.setMaxAge(60 * 60); // 1 hour in seconds
         response.addCookie(jwtCookie);
 
-        // Mettre à jour le statut de l'utilisateur en "ONLINE"
         userService.updateStatus(authenticationRequest.getNumero(), "ONLINE");
 
-        // Retourner une réponse sans le JWT dans le corps
         return ResponseEntity.ok("Authentification réussie");
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        // Supprimer le cookie en réglant son âge à 0
         Cookie jwtCookie = new Cookie("jwtToken", null);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure("prod".equals(System.getenv("APP_ENV"))); // Sécuriser en prod uniquement
+        jwtCookie.setSecure(true);
         jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0); // Suppression immédiate
+        jwtCookie.setMaxAge(0);
         response.addCookie(jwtCookie);
-
-        // Effacer le contexte de sécurité
-        SecurityContextHolder.clearContext();
 
         return ResponseEntity.ok("Déconnexion réussie");
     }
@@ -107,15 +100,12 @@ public class AuthController {
         if (userOptional.isPresent()) {
             User_account user = userOptional.get();
 
-            // Generate a 6-digit verification code
             String verificationCode = String.format("%06d", new Random().nextInt(999999));
 
-            // Save the verification code and its timestamp in the database
             user.setVerificationCode(verificationCode);
             user.setVerificationCodeTimestamp(LocalDateTime.now());
             userRepository.save(user);
 
-            // Send the code via email
             emailService.sendVerificationCode(user.getEmail(), verificationCode);
 
             Map<String, String> response = new HashMap<>();
@@ -135,7 +125,6 @@ public class AuthController {
         if (userOptional.isPresent()) {
             User_account user = userOptional.get();
 
-            // Check that the verification code is not expired before comparing
             if (user.getVerificationCode() != null &&
                 user.getVerificationCodeTimestamp() != null &&
                 user.getVerificationCodeTimestamp().isAfter(LocalDateTime.now().minusMinutes(10)) &&
@@ -160,7 +149,4 @@ public class AuthController {
         errorResponse.put("error", "Utilisateur non trouvé.");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
-
-
-
 }
