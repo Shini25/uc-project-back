@@ -14,11 +14,11 @@ import finance.uc_project.service.CustomUserDetailsService;
 import finance.uc_project.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -29,38 +29,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = null;
-
-        // Récupérer le cookie contenant le token JWT
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("jwtToken".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        // Vérifier le token et authentifier l'utilisateur
-        if (token != null) {
-            try {
-                String username = jwtUtil.extractUsername(token);
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    if (jwtUtil.validateToken(token, userDetails)) {
-                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                    }
+        String token = header.substring(7);
+        try {
+            String username = jwtUtil.extractUsername(token);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (jwtUtil.validateToken(token, userDetails)) {
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-            } catch (UsernameNotFoundException e) {
-                System.out.println("JWT token processing failed: " + e.getMessage());
             }
+        } catch (UsernameNotFoundException e) {
+            System.out.println("JWT token processing failed: " + e.getMessage());
         }
 
-        // Passer la requête et la réponse au filtre suivant
         filterChain.doFilter(request, response);
     }
 }
